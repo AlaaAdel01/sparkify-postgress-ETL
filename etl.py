@@ -34,6 +34,11 @@ def process_song_file(cur, filepath):
 def process_log_file(cur, filepath):
     
     # open log file
+    """"Reads user activity log file row by row, filters by NexSong, selects needed fields, transforms them  and inserts them into time, users and songplays tables.
+            Parameters:
+                cur (psycopg2.cursor()): Cursor of the sparkifydb database
+                filepath (str): Filepath of the file to be analyzed
+    """
     df = pd.read_json(filepath,lines=True)
 
     # filter by NextSong action
@@ -47,7 +52,7 @@ def process_log_file(cur, filepath):
     for line in t:
         time_data.append([line, line.hour, line.day, line.week, line.month, line.year, line.day_name()])
     column_labels = ('start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday')
-    time_df = pd.DataFrame.from_records(time_data,column_labels)
+    time_df = pd.DataFrame(time_data,columns=column_labels)
 
     for i, row in time_df.iterrows():
         cur.execute(time_table_insert, list(row))
@@ -72,21 +77,21 @@ def process_log_file(cur, filepath):
             songid, artistid = None, None
 
         # insert songplay record
-        songplay_data = (index, pd.to_datetime(row.ts, unit='ms'), int(row.userId), row.level, songid, artistid, row.sessionId,                      row.location, row.userAgent)
+        songplay_data = ( pd.to_datetime(row.ts, unit='ms'), int(row.userId), row.level, songid, artistid,                               row.sessionId,row.location, row.userAgent)
         cur.execute(songplay_table_insert, songplay_data)
 
-"""Walks through all files nested under filepath, and processes all logs found.
+def process_data(cur, conn, filepath, func):
+     
+    # get all files matching extension from directory   
+    """Walks through all files nested under filepath, and processes all logs found.
     Parameters:
-        cur (psycopg2.cursor()): Cursor of the sparkifydb database
-        conn (psycopg2.connect()): Connectio to the sparkifycdb database
+        cur (psycopg2.cursor()): sparkifydb database cursor
+        conn (psycopg2.connect()): Connection to the sparkifycdb database
         filepath (str): Filepath parent of the logs to be analyzed
         func (python function): Function to be used to process each log
     Returns:
         Name of files processed
     """
-def process_data(cur, conn, filepath, func):
-     
-    # get all files matching extension from directory
     all_files = []
     for root, dirs, files in os.walk(filepath):
         files = glob.glob(os.path.join(root,'*.json'))
@@ -104,7 +109,6 @@ def process_data(cur, conn, filepath, func):
         print('{}/{} files processed.'.format(i, num_files))
 
     """Function used to extract, transform all data from song and user activity logs and load it into a PostgreSQL DB
-        Usage: python etl.py
     """
 def main():
 

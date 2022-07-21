@@ -93,7 +93,7 @@ time_table_insert = ("""INSERT INTO time
 # FIND SONGS
 
 song_select = (""" select song_id ,artists.artist_id
-        from songs join artists on songs.song_id=artists.artist_id
+        from songs join artists ON songs.artist_id = artists.artist_id
         where songs.title =%s
         AND artists.name =%s
         AND songs.duration =%s
